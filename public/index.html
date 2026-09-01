@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jadwal Belajar Malam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #171b26;
+    --surface: #202536;
+    --surface-2: #2a3045;
+    --border: #343c56;
+    --accent: #e4a853;
+    --text: #ede9de;
+    --text-dim: #949cb4;
+    --done: #7fbf8f;
+    --danger: #d97a70;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 28px 16px 60px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  header.top { margin-bottom: 24px; }
+  header.top h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 30px;
+    margin: 0 0 4px;
+    letter-spacing: -0.3px;
+  }
+  header.top p { color: var(--text-dim); margin: 0; font-size: 14.5px; line-height: 1.5; }
+  .summary { display: flex; gap: 10px; margin-top: 18px; }
+  .summary .box { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .summary .box .num { font-family: 'Fraunces', serif; font-size: 22px; color: var(--accent); }
+  .summary .box .label { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .day-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 16px 12px; margin-bottom: 14px; }
+  .day-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+  .day-head .day-name { font-family: 'Fraunces', serif; font-size: 19px; }
+  .day-head .day-total { font-size: 12.5px; color: var(--text-dim); }
+  .session { display: flex; align-items: flex-start; gap: 10px; background: var(--surface-2); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+  .session.done { opacity: 0.55; }
+  .session .check { width: 19px; height: 19px; border-radius: 50%; border: 1.5px solid var(--text-dim); flex-shrink: 0; margin-top: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all .15s; }
+  .session.done .check { background: var(--done); border-color: var(--done); color: #17301f; }
+  .session .body { flex: 1; min-width: 0; }
+  .session .row1 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .session .subject { font-weight: 600; font-size: 14.5px; }
+  .session.done .subject { text-decoration: line-through; }
+  .session .time { font-size: 12.5px; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .session .note { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; line-height: 1.4; }
+  .session .del { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 15px; padding: 2px 4px; flex-shrink: 0; }
+  .session .del:hover { color: var(--danger); }
+  .empty { font-size: 13px; color: var(--text-dim); padding: 6px 2px 10px; font-style: italic; }
+  .add-btn { width: 100%; background: transparent; border: 1px dashed var(--border); color: var(--text-dim); border-radius: 10px; padding: 9px; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 4px; }
+  .add-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .form { margin-top: 8px; background: var(--surface-2); border-radius: 10px; padding: 12px; display: none; }
+  .form.open { display: block; }
+  .form .row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .form input { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 7px; padding: 8px 10px; font-size: 13.5px; font-family: inherit; width: 100%; }
+  .form input:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
+  .form input[type="time"] { flex: 1; }
+  .form .actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .form button { border: none; border-radius: 7px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .form .save { background: var(--accent); color: #241a08; }
+  .form .cancel { background: transparent; color: var(--text-dim); }
+  .status { text-align: center; color: var(--text-dim); font-size: 12px; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Jadwal belajar</h1>
+    <p>Waktu belajar sesudah pulang kerja, Senin sampai Jumat. Tersimpan di cloud, bisa dibuka dari HP atau laptop mana saja.</p>
+    <div class="summary">
+      <div class="box"><div class="num" id="sumTotal">0j 0m</div><div class="label">Total minggu ini</div></div>
+      <div class="box"><div class="num" id="sumDone">0</div><div class="label">Sesi selesai</div></div>
+      <div class="box"><div class="num" id="sumSisa">0</div><div class="label">Sesi tersisa</div></div>
+    </div>
+  </header>
+
+  <div id="days"></div>
+  <div class="status" id="status">Memuat data...</div>
+</div>
+
+<script>
+const DAYS = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
+const API_URL = "/api/schedule";
+let data = {};
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function minutesBetween(a, b) {
+  if (!a || !b) return 0;
+  const [ah, am] = a.split(":").map(Number);
+  const [bh, bm] = b.split(":").map(Number);
+  let diff = (bh * 60 + bm) - (ah * 60 + am);
+  if (diff < 0) diff += 24 * 60;
+  return diff;
+}
+
+function fmtDur(mins) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}j ${m}m`;
+}
+
+async function load() {
+  setStatus("Memuat data dari cloud...");
+  try {
+    const res = await fetch(API_URL);
+    data = await res.json();
+  } catch (e) {
+    data = {};
+    setStatus("Gagal memuat data, cek koneksi internet");
+  }
+  DAYS.forEach(d => { if (!data[d]) data[d] = []; });
+  render();
+  setStatus("Tersimpan otomatis di cloud");
+}
+
+async function save() {
+  setStatus("Menyimpan ke cloud...");
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("bad response");
+    setStatus("Tersimpan otomatis di cloud");
+  } catch (e) {
+    setStatus("Gagal menyimpan, cek koneksi internet");
+  }
+}
+
+function setStatus(text) { document.getElementById("status").textContent = text; }
+
+function render() {
+  const container = document.getElementById("days");
+  container.innerHTML = "";
+  let totalMinutes = 0, doneCount = 0, remainCount = 0;
+
+  DAYS.forEach(day => {
+    const sessions = data[day].slice().sort((a, b) => a.mulai.localeCompare(b.mulai));
+    const dayMinutes = sessions.reduce((s, x) => s + minutesBetween(x.mulai, x.selesai), 0);
+    totalMinutes += dayMinutes;
+    sessions.forEach(s => s.selesai_status ? doneCount++ : remainCount++);
+
+    const card = document.createElement("div");
+    card.className = "day-card";
+    card.innerHTML = `
+      <div class="day-head">
+        <div class="day-name">${day}</div>
+        <div class="day-total">${sessions.length ? fmtDur(dayMinutes) : "belum ada sesi"}</div>
+      </div>
+      <div class="sessions"></div>
+      <button class="add-btn" data-day="${day}">+ Tambah sesi belajar</button>
+      <div class="form" data-day-form="${day}">
+        <div class="row">
+          <input type="time" class="f-mulai" value="19:00">
+          <input type="time" class="f-selesai" value="20:00">
+        </div>
+        <div class="row"><input type="text" class="f-mapel" placeholder="Topik / mata pelajaran"></div>
+        <div class="row"><input type="text" class="f-catatan" placeholder="Catatan (opsional)"></div>
+        <div class="actions">
+          <button class="cancel" data-cancel="${day}">Batal</button>
+          <button class="save" data-save="${day}">Simpan sesi</button>
+        </div>
+      </div>
+    `;
+
+    const sessionsDiv = card.querySelector(".sessions");
+    if (sessions.length === 0) {
+      sessionsDiv.innerHTML = `<div class="empty">Belum ada jadwal untuk hari ${day}.</div>`;
+    } else {
+      sessions.forEach(s => {
+        const el = document.createElement("div");
+        el.className = "session" + (s.selesai_status ? " done" : "");
+        el.innerHTML = `
+          <div class="check">${s.selesai_status ? "✓" : ""}</div>
+          <div class="body">
+            <div class="row1">
+              <div class="subject">${escapeHtml(s.mapel || "Tanpa judul")}</div>
+              <div class="time">${s.mulai}–${s.selesai}</div>
+            </div>
+            ${s.catatan ? `<div class="note">${escapeHtml(s.catatan)}</div>` : ""}
+          </div>
+          <button class="del" title="Hapus">✕</button>
+        `;
+        el.querySelector(".check").onclick = () => toggleDone(day, s.id);
+        el.querySelector(".del").onclick = () => deleteSession(day, s.id);
+        sessionsDiv.appendChild(el);
+      });
+    }
+
+    container.appendChild(card);
+
+    const addBtn = card.querySelector(".add-btn");
+    const form = card.querySelector(`[data-day-form="${day}"]`);
+    addBtn.onclick = () => form.classList.toggle("open");
+    card.querySelector(`[data-cancel="${day}"]`).onclick = () => form.classList.remove("open");
+    card.querySelector(`[data-save="${day}"]`).onclick = () => {
+      const mulai = form.querySelector(".f-mulai").value;
+      const selesai = form.querySelector(".f-selesai").value;
+      const mapel = form.querySelector(".f-mapel").value.trim();
+      const catatan = form.querySelector(".f-catatan").value.trim();
+      if (!mulai || !selesai || !mapel) {
+        setStatus("Isi jam mulai, jam selesai, dan topik dulu");
+        return;
+      }
+      data[day].push({ id: uid(), mulai, selesai, mapel, catatan, selesai_status: false });
+      form.classList.remove("open");
+      form.querySelector(".f-mapel").value = "";
+      form.querySelector(".f-catatan").value = "";
+      save();
+      render();
+    };
+  });
+
+  document.getElementById("sumTotal").textContent = fmtDur(totalMinutes);
+  document.getElementById("sumDone").textContent = doneCount;
+  document.getElementById("sumSisa").textContent = remainCount;
+}
+
+function toggleDone(day, id) {
+  const s = data[day].find(x => x.id === id);
+  if (s) s.selesai_status = !s.selesai_status;
+  save();
+  render();
+}
+
+function deleteSession(day, id) {
+  data[day] = data[day].filter(x => x.id !== id);
+  save();
+  render();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+load();
+</script>
+</body>
+</html>
